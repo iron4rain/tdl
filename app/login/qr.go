@@ -49,16 +49,19 @@ func QR(ctx context.Context) error {
 
 		var lines int
 		_, err = c.QR().Auth(ctx, qrlogin.OnLoginToken(d), func(ctx context.Context, token qrlogin.Token) error {
-			qr, err := qrcode.New(token.URL(), qrcode.Medium)
-			if err != nil {
-				return errors.Wrap(err, "create qr")
-			}
-			code := qr.ToSmallString(false)
-			lines = strings.Count(code, "\n")
-
-			fmt.Print(code)
-			fmt.Print(strings.Repeat(text.CursorUp.Sprint(), lines))
-			return nil
+		    // 新增：输出链接
+		    fmt.Printf("\nQR Login URL: %s\n\n", token.URL())
+		
+		    qr, err := qrcode.New(token.URL(), qrcode.Medium)
+		    if err != nil {
+		        return errors.Wrap(err, "create qr")
+		    }
+		    code := qr.ToSmallString(false)
+		    lines = strings.Count(code, "\n")
+		
+		    fmt.Print(code)
+		    fmt.Print(strings.Repeat(text.CursorUp.Sprint(), lines))
+		    return nil
 		})
 
 		// clear qrcode
