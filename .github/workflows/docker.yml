@@ -12,7 +12,20 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    # 1. 使用矩阵策略定义不同的操作系统
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            artifact_name: tdl-linux-amd64
+            binary_name: tdl
+          - os: windows-latest
+            artifact_name: tdl-windows-amd64
+            binary_name: tdl.exe
+
+    # 2. 这里的 runs-on 会动态读取矩阵中的 os 变量
+    runs-on: ${{ matrix.os }}
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,12 +36,15 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # 3. 构建命令。使用 matrix.binary_name 区分 Linux 和 Windows 的后缀
       - name: Build
-        run: go build -v -o tdl .
+        # Windows 默认终端是 PowerShell，Linux 是 Bash，以下命令两边都兼容
+        run: go build -v -o ${{ matrix.binary_name }} .
 
+      # 4. 上传产物。使用 matrix.artifact_name 区分不同系统的压缩包名字
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tdl-linux-amd64
-          path: tdl
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.binary_name }}
           retention-days: 7
