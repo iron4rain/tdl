@@ -1,31 +1,21 @@
-name: release-assets
+name: build-test
 
 on:
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to release (e.g., v1.0.0)'
-        required: true
-        type: string
   push:
-    tags:
-      - 'v*'
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  goreleaser:
+  build:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.inputs.tag || github.ref }}
-
-      - name: Fetch all tags
-        run: git fetch --force --tags
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -33,15 +23,12 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Get previous tag
-        run: echo "PREV_TAG=$(git describe --tags --match 'v*' --abbrev=0 HEAD^)" >> $GITHUB_ENV
+      - name: Build
+        run: go build -v -o tdl .
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          distribution: goreleaser
-          version: v1.18.2
-          args: release --rm-dist --timeout 1h
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_PREVIOUS_TAG: ${{ env.PREV_TAG }}
+          name: tdl-linux-amd64
+          path: tdl
+          retention-days: 7
